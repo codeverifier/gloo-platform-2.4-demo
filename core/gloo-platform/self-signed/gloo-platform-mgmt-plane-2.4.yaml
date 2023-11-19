@@ -1,0 +1,2036 @@
+# Gloo Platform product licenses.
+licensing:
+  # Gloo Gateway license key.
+  glooGatewayLicenseKey: "${GLOO_PLATFORM_GLOO_GATEWAY_LICENSE_KEY}"
+  # Gloo Mesh Enterprise license key.
+  glooMeshLicenseKey: "${GLOO_PLATFORM_GLOO_MESH_LICENSE_KEY}"
+  # Gloo Network license key.
+  glooNetworkLicenseKey: "${GLOO_PLATFORM_GLOO_NETWORK_LICENSE_KEY}"
+  # Gloo trial license key, for a trial installation of all products.
+  glooTrialLicenseKey: ""
+  # Deprecated: Legacy Gloo Mesh Enterprise license key. Use individual product license fields, the trial license field, or a license secret instead.
+  licenseKey: ""
+  # Provide license keys in a secret in the adminNamespace of the management cluster, instead of in the license key fields.
+  licenseSecretName: license-keys
+
+# Common values shared across components. When applicable, these can be overridden in specific components.
+common:
+  # Namespace to install add-on components into, such as the Gloo external auth and rate limiting services.
+  addonNamespace: gloo-mesh-addons
+  # Namespace to install control plane components into. The admin namespace also contains global configuration, such as Workspace, global overrides WorkspaceSettings, and KubernetesCluster resources.
+  adminNamespace: ""
+  # Name of the cluster. Be sure to modify this value to match your cluster's name.
+  cluster: ${MGMT_MESH_NAME}
+  # The local cluster domain suffix this cluster is configured with. Defaults to 'cluster.local'.
+  clusterDomain: ""
+  # Set to true to enable development mode for the logger, which can cause panics. Do not use in production.
+  devMode: false
+  # Permit unencrypted and unauthenticated communication between Gloo control and data planes. Do not use in production.
+  insecure: false
+  # Enable leader election for the high-availability deployment.
+  leaderElection: true
+  # Prometheus server address.
+  prometheusUrl: http://prometheus-server
+  # If true, the deployment only reads Istio resource outputs that are created by Gloo Platform, and filters out Istio resource fields that Gloo Mesh cannot properly unmarshal. These other resource outputs are not visible in the Gloo UI.
+  readOnlyGeneratedResources: false
+  # Enable verbose/debug logging.
+  verbose: false
+
+# Demo-specific features that improve quick setups. Do not use in production.
+demo:
+  # Automatically create the add-on namespace set in 'common.addonNamespace'.
+  manageAddonNamespace: false
+
+# Experimental features for Gloo Platform. Disabled by default. Do not use in production.
+experimental:
+  # Allow Gloo Mesh to create Istio Ambient Mesh resources.
+  ambientEnabled: false
+  # Enable asynchronous writing of statuses to Kubernetes objects.
+  asyncStatusWrites: false
+
+# Configuration for the legacy metrics pipeline, which is unsupported in Gloo Platform version 2.4 and later.
+legacyMetricsPipeline:
+  # Set to false to disable the legacy telemetry pipeline.
+  enabled: false
+
+# Configuration for the Gloo management server.
+glooMgmtServer:
+  # Enable creation of the deployment/service.
+  enabled: true
+  # Set to true to enable development mode for the logger, which can cause panics. Do not use in production.
+  devMode: false
+  # Enable verbose/debug logging.
+  verbose: false
+  # Permit unencrypted and unauthenticated communication between Gloo control and data planes. Do not use in production.
+  insecure: false
+  # Enable leader election for the high-availability deployment.
+  leaderElection: false
+  # Maximum message size for gRPC messages sent and received by the management server.
+  maxGrpcMessageSize: "4294967295"
+  # Concurrency to use for translation operations.
+  concurrency: 10
+  # Single-cluster setups only: Create a global workspace that selects all namespaces, and create default workspace settings.
+  createGlobalWorkspace: false
+  # Experimental: Enable cluster load balancing. The management server replicas attempt to auto-balance the number of registered workload clusters, based on the number of replicas and the number of total clusters. For example, the server might disconnect a workload cluster if the number of connected clusters is greater than the allotted number.
+  enableClusterLoadBalancing: false
+  # Allow the pod to be assigned a dynamic user ID. Required for OpenShift installations.
+  floatingUserId: false
+  # Static user ID to run the containers as. Unused if floatingUserId is 'true'.
+  runAsUser: 10101
+  # If true, the deployment only reads Istio resource outputs that are created by Gloo Platform, and filters out Istio resource fields that Gloo Mesh cannot properly unmarshal. These other resource outputs are not visible in the Gloo UI.
+  readOnlyGeneratedResources: false
+  # Set up the management cluster with the Gloo management server and a simple workspace that selects all registered clusters and namespaces by default. This way, you can get started quickly for single cluster or testing setups. For multicluster or production setups, use your own fine-grained workspaces instead. To complete your installation, make sure to enable all other Gloo components that you want, including the Gloo agent.
+  registerCluster: false
+  # Configuration for automatic discovery of CloudResources.
+  cloudResourcesDiscovery:
+    # Enable automated discovery of CloudResources, such as AWS Lambda functions, based on CloudProvider configuration.
+    enabled: true
+    # Polling interval (in seconds) for calling AWS when attempting to discover CloudResources.
+    pollingInterval: 10
+  # Port on the management server deployment to pull stats from.
+  statsPort: 9091
+  # Arbitrary overrides for the component's [deployment template](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/).
+  deploymentOverrides: null
+  # Container image.
+  image:
+    # Image pull policy.
+    pullPolicy: IfNotPresent
+    # Image registry.
+    registry: gcr.io/gloo-mesh
+    # Image name (repository).
+    repository: gloo-mesh-mgmt-server
+  # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+  resources:
+    requests:
+      cpu: 125m
+      memory: 1Gi
+  # Scopes watches and RBAC policies for the given set of GVKs to the given set of namespaces. Currently, 'secrets' are the only supported resource.
+  namespacedRbac:
+    - namespaces: []
+      resources: []
+  # Service ports as a map from port name to port number.
+  ports:
+    grpc: 9900
+    healthcheck: 8090
+  # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+  env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: POD_UID
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.uid
+    - name: K8S_MEM_LIMIT
+      valueFrom:
+        resourceFieldRef:
+          divisor: "1"
+          resource: limits.memory
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          key: key
+          name: gloo-mesh-enterprise-license
+          optional: true
+    - name: REDIS_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: redis-auth-secrets
+          optional: true
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: redis-auth-secrets
+          optional: true
+  # Extra environment variables for the container
+  extraEnvs: {}
+  # Configuration for certificates to secure server-agent relay communication. Required only for multicluster setups.
+  relay:
+    # To disable relay CA functionality, set to true. Set to true only when you supply your custom client certs to the agents for relay mTLS. The gloo-mesh-mgmt-server pod will not require a token secret or the signing cert secret. The agent pod will not require the token secret, but will fail without a client cert.
+    disableCa: false
+    # Do not auto-generate self-signed CA certificates. Set to true only when you supply own.
+    disableCaCertGeneration: false
+    # Do not create the relay token Kubernetes secret. Set to true only when you supply own.
+    disableTokenGeneration: false
+    # Push RBAC resources to the management server. Required for multicluster RBAC in the Gloo UI.
+    pushRbac: true
+    # Secret containing TLS certs used to sign CSRs created by workload agents.
+    signingTlsSecret:
+      name: relay-tls-signing-secret
+    # Secret containing client TLS certs used to secure the management server.
+    tlsSecret:
+      name: relay-server-tls-secret
+    # Secret containing a shared token for authenticating Gloo agents when they first communicate with the management server.
+    tokenSecret:
+      # Key value of the data within the Kubernetes secret.
+      key: token
+      # Name of the Kubernetes secret.
+      name: relay-identity-token-secret
+      # Namespace of the Kubernetes secret.
+      namespace: ""
+  # Service account configuration to use for the management server deployment.
+  serviceAccount:
+    # Extra annotations to add to the service account.
+    extraAnnotations: null
+  # Kubernetes service type. Can be either "ClusterIP", "NodePort", "LoadBalancer", or "ExternalName".
+  serviceType: LoadBalancer
+  # Service annotations
+  serviceOverrides:
+    metadata:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-scheme: ${NLB_LB_SCHEME_TYPE}
+        service.beta.kubernetes.io/aws-load-balancer-type: external
+        service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ${NLB_LB_ADDRESS_TYPE}
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+  # Optional configuration for the deployed containers.
+  sidecars: {}
+
+# Configuration for the Gloo external authentication service.
+extAuthService:
+  # Enable the Gloo external authentication service.
+  enabled: false
+  # Configuration for the extauth service.
+  extAuth:
+    # Headers that will be redacted in the server logs.
+    headersToRedact:
+      - authorization
+    # When receiving a termination signal, the pod waits this amount of seconds for a request that it can use to notify Envoy that it should fail the health check for this endpoint. If no request is received within this interval, the server will shutdown gracefully. The interval should be greater than the active health check interval configured in Envoy for this service.
+    healthCheckFailTimeout: 15
+    # Path for Envoy health checks.
+    healthCheckHttpPath: /healthcheck
+    # Path for liveness health checks.
+    healthLivenessCheckHttpPath: /livenesscheck
+    # Severity level to collect logs for.
+    logLevel: INFO
+    # Values for the extauth image.
+    image:
+      # Image pull policy.
+      pullPolicy: IfNotPresent
+      # Image registry.
+      registry: gcr.io/gloo-mesh
+      # Image name (repository).
+      repository: ext-auth-service
+    # Number of replicas to create
+    replicas: 1
+    # Directory in which the server expects Go plugin .so files.
+    pluginDirectory: /auth-plugins/
+    # Values for the container resource requests.
+    resources:
+      # Minimum amount of compute resources required. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+      requests:
+        # Amount of CPU resource.
+        cpu: 125m
+        # Amount of memory resource.
+        memory: 256Mi
+    # Scopes watches and RBAC policies for the given set of GVKs to the given set of namespaces. Currently, 'secrets' are the only supported resource.
+    namespacedRbac:
+      - namespaces: []
+        resources: []
+    # Configuration for the deployed extauth service.
+    service:
+      # Kubernetes service annotations.
+      annotations: {}
+      # Only relevant if the service is of type NodePort.
+      debugNodePort: 32001
+      # Port on the extauth server to pull logs from.
+      debugPort: 9091
+      # Only relevant if the service is of type NodePort.
+      grpcNodePort: 32000
+      # Port the extauth server listens on for gRPC requests.
+      grpcPort: 8083
+      # Only relevant if the service is of type NodePort.
+      healthNodePort: 32002
+      # Port the extauth server listens on for health checks.
+      healthPort: 8082
+      # Kubernetes service type.
+      type: ClusterIP
+    # Provide the server's secret signing key. If empty, a random key is generated.
+    signingKey: ""
+    # Mount the secret as a file rather than pass the signing key as a environment variable. To ensure maximum security by default, the file is limited to 0440 permissions and the fsGroup matches the runAsGroup.
+    signingKeyFile:
+      # Mount the secret as a file.
+      enabled: false
+      # File permission.
+      fileMode: 288
+      # Group ID for volume ownership.
+      fsGroup: 10101
+      # Set to true to use a volume group.
+      groupSettingEnabled: true
+      # Group ID for the container to run as.
+      runAsGroup: 10101
+      # User ID for the container to run as.
+      runAsUser: 10101
+    # User ID header.
+    userIdHeader: ""
+    # Namespaces to watch in your cluster. If omitted or empty, all namespaces are watched.
+    watchNamespace: ""
+    # Configuration for the deployed extauth service.
+    apiKeyStorage:
+      # The ApiKeyStorage configuration. To configure access to Redis use the [RedisOptions](https://github.com/solo-io/solo-apis/blob/gloo-v1.15.0-beta2/api/gloo/enterprise.gloo/v1/auth_config.proto#L329-L353). Currently, only redis is supported.
+      config: null
+      # Enable API key storage.
+      enabled: false
+      # The permanent storage to be used. Currently, only redis is supported.
+      name: ""
+      # Configuration for using a Redis instance for authentication.
+      redis:
+        # Values for the authentication details.
+        auth:
+          # Connect to the Redis instance with a password
+          enabled: false
+          # The secret key containing the password to use for authentication
+          passwordKey: ""
+          # Name of the k8s secret that contains the password
+          secretName: ""
+          # The secret key containing the username to use for authentication
+          usernameKey: ""
+      # The secret key to hash the API key with.
+      secretKey: ""
+  # Extra key-value pairs to add to the labels data of the extauth deployment.
+  extraLabels: null
+  # Extra annotations to add to the extauth service pods.
+  extraTemplateAnnotations:
+    proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
+
+# Configuration for the Gloo rate limiting service.
+rateLimiter:
+  # Enable the Gloo rate limiting service.
+  enabled: false
+  # Extra key-value pairs to add to the labels data of the rate limiter deployment.
+  extraLabels: null
+  # Extra annotations to add to the rate limiter service pods.
+  extraTemplateAnnotations:
+    proxy.istio.io/config: '{ "holdApplicationUntilProxyStarts": true }'
+  # Configuration for the rate limiter.
+  rateLimiter:
+    # Values for the rate limiter image.
+    image:
+      # Image pull policy.
+      pullPolicy: IfNotPresent
+      # Image registry.
+      registry: gcr.io/gloo-mesh
+      # Image name (repository).
+      repository: rate-limiter
+    # If true, use ClusterRoles. If false, use Roles.
+    installClusterRoles: true
+    # Severity level to collect logs for.
+    logLevel: INFO
+    # Ports for the rate limiter service.
+    ports:
+      # Port on the rate limiter to pull logs from.
+      debug: 9091
+      # Port the rate limiter listens on for gRPC requests.
+      grpc: 8083
+      # Port the rate limiter listens on for readiness checks.
+      ready: 8084
+    # Path for readiness checks.
+    readyPath: /ready
+    # Values for the container resource requests.
+    resources:
+      # Minimum amount of compute resources required. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+      requests:
+        # Amount of CPU resource.
+        cpu: 125m
+        # Amount of memory resource.
+        memory: 256Mi
+    # Configuration for the deployed rate limiter service.
+    service:
+      # Kubernetes service annotations.
+      annotations: {}
+    # Namespaces to watch in your cluster. If omitted or empty, all namespaces are watched.
+    watchNamespace: ""
+  # Configuration for using a Redis instance for authentication.
+  redis:
+    # Install the default Redis instance.
+    enabled: true
+    # Set to true if your Redis instance runs in clustered mode.
+    clustered: false
+    # Hostname clients use to connect to the Redis instance.
+    hostname: redis
+    # Values for the authentication details.
+    auth:
+      # Use the default Redis instance for authentication.
+      enabled: false
+      # Key that contains the password.
+      passwordKey: redis-password
+      # Name of the secret that contains the username and password.
+      secretName: redis-secrets
+      # Key that contains the username. If Redis doesn't have an explicit username, specify 'default'.
+      usernameKey: redis-username
+    # Provide a CA cert for the rate limiter and Redis instance (if enabled) to use.
+    certs:
+      # File name that contains the CA cert.
+      caCert: redis.crt
+      # Enable the rate limiter and Redis instance (if enabled) to use the CA cert you provide.
+      enabled: false
+      # Mount path for the certs.
+      mountPoint: /etc/tls
+      # Name of the secret for the CA cert.
+      secretName: redis-certs-keys
+      # File name that contains the signing key. Only relevant for the Redis instance.
+      signingKey: redis.key
+    # Values for the Redis image.
+    image:
+      # Image pull policy.
+      pullPolicy: IfNotPresent
+      # Image registry.
+      registry: docker.io
+      # Image name (repository).
+      repository: redis
+    # Values for the Redis service.
+    service:
+      # Select the Redis logical database having the specified zero-based numeric index.
+      db: 0
+      # Name for the Redis service.
+      name: redis
+      # Port for the Redis service.
+      port: 6379
+      # 'unix', 'tcp', or 'tls' are supported.
+      socket: tcp
+
+# Configuration for the Gloo agent.
+glooAgent:
+  # Configuration for the Gloo agent.
+  enabled: false
+  # Enable verbose/debug logging.
+  verbose: false
+  # Number of access logs to buffer per Envoy proxy.
+  accessLogsBufferSize: 50
+  # Set to true to enable development mode for the logger, which can cause panics. Do not use in production.
+  devMode: false
+  # Permit unencrypted and unauthenticated communication between Gloo control and data planes. Do not use in production.
+  insecure: false
+  # Enable leader election for the high-availability deployment.
+  leaderElection: false
+  # Maximum message size for gRPC messages sent and received by the management server.
+  maxGrpcMessageSize: "4294967295"
+  # Number of metrics messages to buffer per Envoy proxy.
+  metricsBufferSize: 50
+  # Allow the pod to be assigned a dynamic user ID. Required for OpenShift installations.
+  floatingUserId: false
+  # Static user ID to run the containers as. Unused if floatingUserId is 'true'.
+  runAsUser: 10101
+  # If true, the deployment only reads Istio resource outputs that are created by Gloo Platform, and filters out Istio resource fields that Gloo Mesh cannot properly unmarshal. These other resource outputs are not visible in the Gloo UI.
+  readOnlyGeneratedResources: false
+  # Arbitrary overrides for the component's [deployment template](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/).
+  deploymentOverrides: null
+  # Container image.
+  image:
+    # Image pull policy.
+    pullPolicy: IfNotPresent
+    # Image registry.
+    registry: gcr.io/gloo-mesh
+    # Image name (repository).
+    repository: gloo-mesh-agent
+  # Configuration for the istiod sidecar deployment.
+  istiodSidecar:
+    # Create the cluster role binding for the istiod sidecar. Set this value to 'true' only when using the [Vault integration](https://docs.solo.io/gloo-mesh-enterprise/latest/setup/prod/certs/istio/managed/setup-options/#vault).
+    createRoleBinding: false
+    # Object reference for the istiod service account.
+    istiodServiceAccount:
+      name: istiod
+      namespace: istio-system
+  # Scopes watches and RBAC policies for the given set of GVKs to the given set of namespaces. Currently, 'secrets' are the only supported resource.
+  namespacedRbac:
+    - namespaces: []
+      resources: []
+  # Service ports as a map from port name to port number.
+  ports:
+    grpc: 9977
+    healthcheck: 8090
+    http: 9988
+    stats: 9091
+  # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+  env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: K8S_MEM_LIMIT
+      valueFrom:
+        resourceFieldRef:
+          divisor: "1"
+          resource: limits.memory
+  # Extra environment variables for the container
+  extraEnvs: {}
+  # Configuration for securing relay communication between the workload agents and the management server.
+  relay:
+    # SNI name in the authority/host header used to connect to relay forwarding server. Must match server certificate CommonName. Do not change the default value.
+    authority: gloo-mesh-mgmt-server.gloo-mesh
+    # Custom certs: Secret containing client TLS certs used to identify the Gloo agent to the management server. If you do not specify a clientTlssSecret, you must specify a tokenSecret and a rootTlsSecret.
+    clientTlsSecret:
+      name: relay-client-tls-secret
+    # The ratio of the client TLS certificate lifetime to when the management server starts the certificate rotation process.
+    clientTlsSecretRotationGracePeriodRatio: ""
+    # Secret containing a root TLS cert used to verify the management server cert. The secret can also optionally specify a 'tls.key', which is used to generate the agent client cert.
+    rootTlsSecret:
+      name: relay-root-tls-secret
+    # Address and port by which gloo-mesh-mgmt-server in the Gloo control plane can be accessed by the Gloo workload agents.
+    serverAddress: ""
+    # Secret containing a shared token for authenticating Gloo agents when they first communicate with the management server. A token secret is not needed with ACM certs.
+    tokenSecret:
+      # Key value of the data within the Kubernetes secret.
+      key: token
+      # Name of the Kubernetes secret.
+      name: relay-identity-token-secret
+      # Namespace of the Kubernetes secret.
+      namespace: ""
+  # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  # Kubernetes service type. Can be either "ClusterIP", "NodePort", "LoadBalancer", or "ExternalName".
+  serviceType: ClusterIP
+  # Arbitrary overrides for the component's [service template](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/).
+  serviceOverrides: null
+  # Optional configuration for the deployed containers.
+  sidecars: {}
+
+# Gloo Network configuration options.
+glooNetwork:
+  # Install the Gloo Network-specific agent functionality only if you provided a Gloo Network license key.
+  enabled: false
+  # Values for the Gloo Network Agent DaemonSet.
+  agent:
+    # File path where eBPF programs run.
+    bpfRoot: /sys/fs/bpf
+    # Run the Network agent in debug mode.
+    debug: false
+    # Name of the Network agent deployment.
+    fullname: gloo-network-agent
+    # Values for the Network agent image.
+    image:
+      # Image registry.
+      hub: us-docker.pkg.dev
+      # Image pull policy.
+      pullPolicy: Always
+      # Image name (repository).
+      repository: gloo-mesh/gloo-network-agent-8d33bc4d8c7a/gloo-network-agent
+    # Values for the container and init container.
+    resources:
+      # Resource values for the container.
+      container:
+        # Maximum amount of compute resources allowed. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+        limit:
+          # Amount of CPU resource.
+          cpu: 300m
+          # Amount of memory resource.
+          memory: 200Mi
+        # Minimum amount of compute resources required. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+        request:
+          # Amount of CPU resource.
+          cpu: 100m
+          # Amount of memory resource.
+          memory: 200Mi
+      # Resource values for the init container.
+      init:
+        # Maximum amount of compute resources allowed. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+        limit:
+          # Amount of CPU resource.
+          cpu: 300m
+          # Amount of memory resource.
+          memory: 50Mi
+        # Minimum amount of compute resources required. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+        request:
+          # Amount of CPU resource.
+          cpu: 100m
+          # Amount of memory resource.
+          memory: 50Mi
+    # Number of old ReplicaSets for the agent deployment you want to retain.
+    revisionHistoryLimit: 10
+
+# Gloo Portal configuration options.
+glooPortalServer:
+  # Enable creation of the deployment/service.
+  enabled: false
+  # Set to true to enable development mode for the logger, which can cause panics. Do not use in production.
+  devMode: false
+  # Enable verbose/debug logging.
+  verbose: false
+  # Allow the pod to be assigned a dynamic user ID. Required for OpenShift installations.
+  floatingUserId: false
+  # Static user ID to run the containers as. Unused if floatingUserId is 'true'.
+  runAsUser: 10101
+  # Arbitrary overrides for the component's [deployment template](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/).
+  deploymentOverrides: null
+  # Container image.
+  image:
+    # Image pull policy.
+    pullPolicy: IfNotPresent
+    # Image registry.
+    registry: gcr.io/gloo-mesh
+    # Image name (repository).
+    repository: gloo-mesh-portal-server
+  # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+  env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: APIKEY_STORAGE_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          key: key
+          name: portal-storage-secret-key
+    - name: REDIS_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: portal-redis-credentials
+          optional: true
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: portal-redis-credentials
+          optional: true
+  # Extra environment variables for the container
+  extraEnvs: {}
+  # Service ports as a map from port name to port number.
+  ports:
+    http: 8080
+  # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  # Kubernetes service type. Can be either "ClusterIP", "NodePort", "LoadBalancer", or "ExternalName".
+  serviceType: ClusterIP
+  # Arbitrary overrides for the component's [service template](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/).
+  serviceOverrides: null
+  # Optional configuration for the deployed containers.
+  sidecars: {}
+  # Configure backend storage for API keys.
+  apiKeyStorage:
+    # Configuration for using a Redis instance for authentication.
+    redis:
+      # Address to use when connecting to the Redis instance. To use the default Redis deployment, specify 'redis.gloo-mesh.svc.cluster.local:6379'.
+      address: ""
+      # Optional authentication values to use when connecting to the Redis instance
+      auth:
+        # Connect to the Redis instance with a password
+        enabled: false
+        # The secret key containing the password to use for authentication
+        passwordKey: ""
+        # Name of the k8s secret that contains the password
+        secretName: ""
+        # The secret key containing the username to use for authentication
+        usernameKey: ""
+      # Configuration for TLS verification when connecting to the Redis instance
+      certs:
+        # The secret key containing the ca cert
+        caCertKey: ""
+        # Enable a secure network connection to the Redis instance via TLS
+        enabled: false
+        # Name of the k8s secret that contains the certs
+        secretName: ""
+      # Optional connection parameters
+      connection:
+        # The maximum amount of time a connection may be idle. Should be less than server's timeout. Default is 30 minutes. -1 disables idle timeout check.
+        connMaxIdleTime: 30m
+        # The maximum amount of time a connection may be reused. If <= 0, connections are not closed due to a connection's age.
+        connMaxLifetime: "0"
+        # ContextTimeoutEnabled controls whether the client respects context timeouts and deadlines.
+        contextTimeoutEnabled: false
+        # Dial timeout for establishing new connections. Default is 5 seconds.
+        dialTimeout: 5s
+        # Deprecated: in favor of 'connMaxIdleTime'. Amount of time after which client closes idle connections. Should be less than server's timeout. Default is 30 minutes. -1 disables idle timeout check.
+        idleTimeout: 30m
+        # The master name. Only needed for sentinel mode.
+        masterName: ""
+        # Deprecated: in favor of using 'connMaxLifetime'. Connection age at which client retires (closes) the connection. Default is to not close aged connections.
+        maxConnAge: "0"
+        # Maximum number of idle connections.
+        maxIdleConns: 0
+        # The maximum number of retries before giving up. Command is retried on network errors and MOVED/ASK redirects. Default is 3 retries.
+        maxRedirects: 3
+        # Maximum number of retries before giving up. Default is 3. -1 disables retries.
+        maxRetries: 3
+        # Maximum backoff between each retry. Default is 512 milliseconds. -1 disables backoff.
+        maxRetryBackoff: 512ms
+        # Minimum number of idle connections which is useful when establishing new connection is slow.
+        minIdleConns: 0
+        # Minimum backoff between each retry. Default is 8 milliseconds. -1 disables backoff.
+        minRetryBackoff: 8ms
+        # Type of connection pool. true for FIFO pool. false for LIFO pool. Note that FIFO has higher overhead compared to LIFO.
+        poolFifo: false
+        # Maximum number of socket connections. Default is 10 connections per every available CPU as reported by runtime.GOMAXPROCS.
+        poolSize: 0
+        # Amount of time client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
+        poolTimeout: 4s
+        # Enables read-only commands on slave nodes. Default is false.
+        readOnly: false
+        # Timeout for socket reads. if reached, commands will fail with a timeout instead of blocking. Default is 3 seconds. -1 disables timeout. 0 uses the default value.
+        readTimeout: 3s
+        # Allows routing read-only commands to the closest master or slave node. It automatically enables ReadOnly.
+        routeByLatency: false
+        # Allows routing read-only commands to the random master or slave node. It automatically enables ReadOnly.
+        routeRandomly: false
+        # Timeout for socket writes. If reached, commands will fail with a timeout instead of blocking. Default is ReadTimeout.
+        writeTimeout: 3s
+      # DB to connect to
+      db: 0
+    # The string value that you want to use to hash API keys before they are stored in the backing database.
+    secretKey: change this
+    # Backend storage for API keys. Currently, redis is supported.
+    type: redis
+
+glooSpireServer:
+  # Enable creation of the deployment/service.
+  enabled: false
+  # Sidecar controller configuration.
+  controller:
+    # Enable leader election for the controller. Enabling this will ensure there is only one active controller.
+    leaderElection: true
+    # Enable verbose/debug logging.
+    verbose: true
+  # Allow the pod to be assigned a dynamic user ID. Required for OpenShift installations.
+  floatingUserId: false
+  # Static user ID to run the containers as. Unused if floatingUserId is 'true'.
+  runAsUser: 10101
+  # Arbitrary overrides for the component's [deployment template](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/).
+  deploymentOverrides: null
+  # Container image.
+  image:
+    # Image pull policy.
+    pullPolicy: IfNotPresent
+    # Image registry.
+    registry: ghcr.io/spiffe
+    # Image name (repository).
+    repository: spire-server
+  # Service ports as a map from port name to port number.
+  ports:
+    api: 8081
+  # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+  env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+  # Extra environment variables for the container
+  extraEnvs: {}
+  # Plugins configuration.
+  plugins:
+    # Datastore configuration
+    datastore:
+      # Connection string for the database.
+      connectionString: /run/spire/data/datastore.sqlite3
+      # Database type: postgres, mysql, or sqlite3.
+      databaseType: sqlite3
+    # Node attestor configuration
+    nodeAttestor:
+      # AWS node attestor configuration.
+      aws:
+        # AWS access key ID for long term credentials. Defaults to AWS_ACCESS_KEY_ID environment variable.
+        accessKeyId: ""
+        # The ARN of the role to assume when making AWS API calls.
+        assumeRole: ""
+        # Disables retrieving the attesting instance profile information that is used in the selectors. Useful in cases where the server cannot reach iam.amazonaws.com. Defaults to false.
+        disableInstanceProfileSelectors: false
+        # Enables the AWS node attestor. Defaults to false.
+        enabled: false
+        # AWS secret access key for long term credentials. Defaults to AWS_SECRET_ACCESS_KEY environment variable.
+        secretAccessKey: ""
+        # Skip anti-tampering mechanism which checks to make sure that the underlying root volume has not been detached prior to attestation. Defaults to false.
+        skipBlockDevice: false
+      # GCP node attestor configuration.
+      gcp:
+        # List of instance label keys that are allowed to be used in selectors.
+        allowedLabelKeys: null
+        # List of instance metadata keys that are allowed to be used in selectors.
+        allowedMetadataKeys: null
+        # List of Project IDs from which nodes can be attested.
+        allowedProjectIds: null
+        # Enables the GCP node attestor. Defaults to false.
+        enabled: false
+        # Maximum instance metadata value size considered by the node attestor. Defaults to 128 KiB.
+        maxMetadataValueSize: 128
+        # If true, instance metadata is fetched from the Google Compute Engine API and used to augment the node selectors produced by the node attestor. Defaults to true.
+        useInstanceMetadata: true
+    # Upstream authority configuration
+    upstreamAuthority:
+      # Upstream authority cert-manager configuration.
+      certManager:
+        # Enables the cert-manager upstream authority plugin. Defaults to false.
+        enabled: false
+        # The group of the issuer to reference in CertificateRequests. Defaults to 'cert-manager.io' if empty.
+        issuerGroup: cert-manager.io
+        # The kind of the issuer to reference in CertificateRequests. Defaults to 'Issuer' if empty.
+        issuerKind: Issuer
+        # The name of the issuer to reference in CertificateRequests.
+        issuerName: ""
+        # The namespace to create CertificateRequests for signing.
+        namespace: ""
+      # Upstream authority disk configuration.
+      disk:
+        # Enables the disk upstream authority plugin. Defaults to true.
+        enabled: true
+        # Path to the PEM encoded upstream authority root certificate file. If SPIRE is using self-signed CA, this can be left unset.
+        bundleFilePath: /run/spire/certs/root-cert.pem
+        # Path to the PEM encoded upstream authority certificate file.
+        certFilePath: /run/spire/certs/cert-chain.pem
+        # Path to the PEM encoded upstream authority key file.
+        keyFilePath: /run/spire/certs/ca-key.pem
+  # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  # Server configuration.
+  server:
+    # TTL for the SPIRE agent SVIDs specified as as number and unit suffix, such as 1h for 1 hour. Defaults to 48 hours.
+    agentTtl: 48h
+    # TTL for the SPIRE server CA specified as as number and unit suffix, such as 87600h for 87600 hours.
+    caTtl: 87600h
+    # Default TTL for all X509 SVIDs specified as as number and unit suffix, such as 1h for 1 hour. Defaults to 48 hours.
+    defaultX509SvidTtl: 48h
+    # Log level of SPIRE server.
+    logLevel: DEBUG
+    # Trust domain of SPIRE server.
+    trustDomain: cluster.local
+  # Arbitrary overrides for the component's [service template](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/).
+  serviceOverrides: null
+  # Kubernetes service type. Can be either "ClusterIP", "NodePort", "LoadBalancer", or "ExternalName".
+  serviceType: ClusterIP
+  # Optional configuration for the deployed containers.
+  sidecars:
+    glooSpireController:
+      # Container image.
+      image:
+        # Image pull policy.
+        pullPolicy: IfNotPresent
+        # Image registry.
+        registry: gcr.io/gloo-mesh
+        # Image name (repository).
+        repository: gloo-mesh-spire-controller
+      # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+      env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      # Extra environment variables for the container
+      extraEnvs: {}
+      # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+
+# Configuration for deploying managed Istio control plane and gateway installations by using the Istio lifecycle manager.
+istioInstallations:
+  # Enable managed Istio installations.
+  enabled: false
+  # Configuration for the managed Istio control plane instance.
+  controlPlane:
+    # Install the managed Istio control plane instance in the cluster.
+    enabled: true
+    # List of Istio control plane installations.
+    installations:
+      - # Clusters to install the Istio control planes in.
+        clusters: null
+        # IstioOperator specification for the control plane. For more info, see the [IstioOperatorSpec reference](https://docs.solo.io/gloo-mesh-enterprise/latest/reference/api/istio_operator/#istiooperatorspec).
+        istioOperatorSpec: {}
+        # Istio revision for this installation, such as '1-18'. Label workload resources with 'istio.io/rev=$REVISION' to use this installation. Defaults to 'AUTO', which installs the default supported version of Gloo Istio.
+        revision: auto
+  # Configuration for the managed east-west gateway.
+  eastWestGateways: null
+  # Configuration for the managed north-south (ingress) gateway. Requires a Gloo Gateway license.
+  northSouthGateways:
+    - # Install the gateway in the cluster.
+      enabled: true
+      # Name of the gateway. Must be unique.
+      name: istio-ingressgateway
+      # List of Istio gateway installations. For more info, see the [GatewayInstallation reference](https://docs.solo.io/gloo-mesh-enterprise/latest/reference/api/gateway_lifecycle_manager/#gatewayinstallation).
+      installations:
+        - # Clusters to install the gateway in.
+          clusters: null
+          # Istio revision for this installation, such as '1-18'. Defaults to 'AUTO', which installs the default supported version of Gloo Istio.
+          gatewayRevision: auto
+          # IstioOperator specification for the gateway. For more info, see the [IstioOperatorSpec reference](https://docs.solo.io/gloo-mesh-enterprise/latest/reference/api/istio_operator/#istiooperatorspec).
+          istioOperatorSpec: {}
+
+# Configuration for the Gloo Mesh UI
+glooUi:
+  # Enable creation of the deployment/service.
+  enabled: true
+  # Enable verbose/debug logging.
+  verbose: false
+  # Allow the pod to be assigned a dynamic user ID. Required for OpenShift installations.
+  floatingUserId: false
+  # Static user ID to run the containers as. Unused if floatingUserId is 'true'.
+  runAsUser: 10101
+  # Provide license keys in a secret in the adminNamespace of the management cluster, instead of in the license key fields.
+  licenseSecretName: ""
+  # Prometheus server address.
+  prometheusUrl: ""
+  # If true, the deployment only reads Istio resource outputs that are created by Gloo Platform, and filters out Istio resource fields that Gloo Mesh cannot properly unmarshal. These other resource outputs are not visible in the Gloo UI.
+  readOnlyGeneratedResources: false
+  # Name of the UI settings object to use.
+  settingsName: settings
+  # Arbitrary overrides for the component's [deployment template](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/).
+  deploymentOverrides: null
+  # Container image.
+  image:
+    # Image pull policy.
+    pullPolicy: IfNotPresent
+    # Image registry.
+    registry: gcr.io/gloo-mesh
+    # Image name (repository).
+    repository: gloo-mesh-apiserver
+  # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+  env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: LICENSE_KEY
+      valueFrom:
+        secretKeyRef:
+          key: key
+          name: gloo-mesh-enterprise-license
+          optional: true
+    - name: REDIS_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: redis-auth-secrets
+          optional: true
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: redis-auth-secrets
+          optional: true
+  # Extra environment variables for the container
+  extraEnvs: {}
+  # Service ports as a map from port name to port number.
+  ports:
+    console: 8090
+    grpc: 10101
+    healthcheck: 8081
+  # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+  resources:
+    requests:
+      cpu: 125m
+      memory: 256Mi
+  # Scopes watches and RBAC policies for the given set of GVKs to the given set of namespaces. Currently, 'secrets' are the only supported resource.
+  namespacedRbac:
+    - namespaces: []
+      resources: []
+  # Kubernetes service type. Can be either "ClusterIP", "NodePort", "LoadBalancer", or "ExternalName".
+  serviceType: ClusterIP
+  # Arbitrary overrides for the component's [service template](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/).
+  serviceOverrides: null
+  # Optional configuration for the deployed containers.
+  sidecars:
+    console:
+      # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+      env: null
+      # Extra environment variables for the container
+      extraEnvs: {}
+      # Container image.
+      image:
+        # Image pull policy.
+        pullPolicy: IfNotPresent
+        # Image registry.
+        registry: gcr.io/gloo-mesh
+        # Image name (repository).
+        repository: gloo-mesh-ui
+      # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+      resources:
+        requests:
+          cpu: 125m
+          memory: 256Mi
+    envoy:
+      # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+      env:
+        - name: ENVOY_UID
+          value: "0"
+      # Extra environment variables for the container
+      extraEnvs: {}
+      # Container image.
+      image:
+        # Image pull policy.
+        pullPolicy: IfNotPresent
+        # Image registry.
+        registry: gcr.io/gloo-mesh
+        # Image name (repository).
+        repository: gloo-mesh-envoy
+      # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+      resources:
+        requests:
+          cpu: 500m
+          memory: 256Mi
+  # Configure the tracing page for the UI. Tracing page is disabled if not configured.
+  tracing:
+    # Base path the tracing UI expects to be rendered on.
+    basePath: ""
+    # Endpoint of the tracing UI that will be embedded on the tracing page.
+    endpoint: ""
+    # Port of the tracing UI that will be embedded on the tracing page.
+    port: 0
+  # Configure authentication for the UI.
+  auth:
+    # Authentication backend to use. 'oidc' is supported.
+    backend: ""
+    # Require authentication to access the UI.
+    enabled: false
+    # Settings for the OpenID Connect (OIDC) backend.
+    oidc:
+      # URL that the UI for OIDC app is available at, from the DNS and other ingress settings that expose OIDC app UI service.
+      appUrl: ""
+      # OIDC client ID
+      clientId: ""
+      # Plaintext OIDC client secret, which will be encoded in base64 and stored in a secret named the value of 'clientSecretName'.
+      clientSecret: ""
+      # Name for the secret that will contain the client secret.
+      clientSecretName: ""
+      # Issuer URL from the OIDC provider, such as 'https://<domain>.<provider_url>/'.
+      issuerUrl: ""
+      # Session storage configuration. If omitted, a cookie is used.
+      session:
+        # Backend to use for auth session storage. 'cookie' and 'redis' are supported.
+        backend: ""
+        # Redis instance configuration.
+        redis:
+          # Host at which the Redis instance is accessible. To use the default Redis deployment, specify 'redis.gloo-mesh.svc.cluster.local:6379'.
+          host: ""
+
+# Experimental: Configuration for eBPF sidecar acceleration. Do not use in production.
+sidecarAccel:
+  # Enable eBPF sidecar acceleration to reduce network latency in your service mesh.
+  enabled: false
+  # Run sidecar acceleration in debug mode.
+  debug: false
+  # Name of the sidecar acceleration deployment.
+  fullname: sidecar-accel
+  # Number of old ReplicaSets for the agent deployment you want to retain.
+  revisionHistoryLimit: 10
+  # Values for the sidecar acceleration image.
+  image:
+    # Image registry.
+    hub: us-docker.pkg.dev
+    # Image pull policy.
+    pullPolicy: Always
+    # Image name (repository).
+    repository: gloo-mesh/sidecar-accel/sidecar-accel
+  # Namespace to deploy sidecar acceleration into.
+  namespace: istio-system
+  # Values for the container and init container.
+  resources:
+    # Resource values for the container.
+    container:
+      # Maximum amount of compute resources allowed. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+      limit:
+        # Amount of CPU resource.
+        cpu: 300m
+        # Amount of memory resource.
+        memory: 200Mi
+      # Minimum amount of compute resources required. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+      request:
+        # Amount of CPU resource.
+        cpu: 100m
+        # Amount of memory resource.
+        memory: 200Mi
+    # Resource values for the init container.
+    init:
+      # Maximum amount of compute resources allowed. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+      limit:
+        # Amount of CPU resource.
+        cpu: 300m
+        # Amount of memory resource.
+        memory: 50Mi
+      # Minimum amount of compute resources required. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
+      request:
+        # Amount of CPU resource.
+        cpu: 100m
+        # Amount of memory resource.
+        memory: 50Mi
+
+# Redis configuration options.
+redis:
+  # Address to use when connecting to the Redis instance. To use the default Redis deployment, specify 'redis.gloo-mesh.svc.cluster.local:6379'.
+  address: gloo-mesh-redis.gloo-mesh:6379
+  # Optional authentication values to use when connecting to the Redis instance
+  auth:
+    # Connect to the Redis instance with a password
+    enabled: false
+    # The secret key containing the password to use for authentication
+    passwordKey: password
+    # Name of the k8s secret that contains the password
+    secretName: redis-auth-secrets
+    # The secret key containing the username to use for authentication
+    usernameKey: username
+  # Configuration for TLS verification when connecting to the Redis instance
+  certs:
+    # Enable a secure network connection to the Redis instance via TLS
+    enabled: false
+    # The secret key containing the ca cert
+    caCertKey: ""
+    # Name of the k8s secret that contains the certs
+    secretName: redis-certs
+  # Optional connection parameters
+  connection:
+    # Enables read-only commands on slave nodes. Default is false.
+    readOnly: false
+    # The maximum amount of time a connection may be idle. Should be less than server's timeout. Default is 30 minutes. -1 disables idle timeout check.
+    connMaxIdleTime: 5m0s
+    # The maximum amount of time a connection may be reused. If <= 0, connections are not closed due to a connection's age.
+    connMaxLifetime: "0"
+    # ContextTimeoutEnabled controls whether the client respects context timeouts and deadlines.
+    contextTimeoutEnabled: false
+    # Dial timeout for establishing new connections. Default is 5 seconds.
+    dialTimeout: 5s
+    # Deprecated: in favor of 'connMaxIdleTime'. Amount of time after which client closes idle connections. Should be less than server's timeout. Default is 30 minutes. -1 disables idle timeout check.
+    idleTimeout: 5m0s
+    # The master name. Only needed for sentinel mode.
+    masterName: ""
+    # Deprecated: in favor of using 'connMaxLifetime'. Connection age at which client retires (closes) the connection. Default is to not close aged connections.
+    maxConnAge: "0"
+    # Maximum number of idle connections.
+    maxIdleConns: 0
+    # The maximum number of retries before giving up. Command is retried on network errors and MOVED/ASK redirects. Default is 3 retries.
+    maxRedirects: 3
+    # Maximum number of retries before giving up. Default is 3. -1 disables retries.
+    maxRetries: 3
+    # Maximum backoff between each retry. Default is 512 milliseconds. -1 disables backoff.
+    maxRetryBackoff: 512ms
+    # Minimum number of idle connections which is useful when establishing new connection is slow.
+    minIdleConns: 0
+    # Minimum backoff between each retry. Default is 8 milliseconds. -1 disables backoff.
+    minRetryBackoff: 8ms
+    # Type of connection pool. true for FIFO pool. false for LIFO pool. Note that FIFO has higher overhead compared to LIFO.
+    poolFifo: false
+    # Maximum number of socket connections. Default is 10 connections per every available CPU as reported by runtime.GOMAXPROCS.
+    poolSize: 0
+    # Amount of time client waits for connection if all connections are busy before returning an error. Default is ReadTimeout + 1 second.
+    poolTimeout: ""
+    # Timeout for socket reads. if reached, commands will fail with a timeout instead of blocking. Default is 3 seconds. -1 disables timeout. 0 uses the default value.
+    readTimeout: 3s
+    # Allows routing read-only commands to the closest master or slave node. It automatically enables ReadOnly.
+    routeByLatency: false
+    # Allows routing read-only commands to the random master or slave node. It automatically enables ReadOnly.
+    routeRandomly: false
+    # Timeout for socket writes. If reached, commands will fail with a timeout instead of blocking. Default is ReadTimeout.
+    writeTimeout: 3s
+  # DB to connect to
+  db: 0
+  deployment:
+    # Enable creation of the deployment/service.
+    enabled: true
+    # Arbitrary overrides for the component's [deployment template](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/).
+    deploymentOverrides: null
+    # Allow the pod to be assigned a dynamic user ID. Required for OpenShift installations.
+    floatingUserId: false
+    # Static user ID to run the containers as. Unused if floatingUserId is 'true'.
+    runAsUser: 10101
+    # Container image.
+    image:
+      # Image pull policy.
+      pullPolicy: IfNotPresent
+      # Image registry.
+      registry: docker.io
+      # Image name (repository).
+      repository: redis
+    # Environment variables for the container. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvarsource-v1-core).
+    env:
+      - name: MASTER
+        value: "true"
+    # Extra environment variables for the container
+    extraEnvs: {}
+    # Service ports as a map from port name to port number.
+    ports:
+      redis: 6379
+    # Container resource requirements. For more info, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core).
+    resources:
+      requests:
+        cpu: 125m
+        memory: 256Mi
+    # Kubernetes service type. Can be either "ClusterIP", "NodePort", "LoadBalancer", or "ExternalName".
+    serviceType: ClusterIP
+    # Arbitrary overrides for the component's [service template](https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/).
+    serviceOverrides: null
+    # Optional configuration for the deployed containers.
+    sidecars: {}
+
+# Configuration for PostgreSQL. See the [Bitnami Postgresql Helm chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql) for the complete set of values
+postgresql:
+  # Whether to enabled PostgreSQL dependency
+  enabled: false
+  # Override the full name of PostgreSQL components
+  fullnameOverride: postgresql
+
+# Helm values for configuring Prometheus. See the [Prometheus Helm chart](https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/values.yaml) for the complete set of values.
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  podSecurityPolicy:
+    enabled: false
+  pushgateway:
+    enabled: false
+  rbac:
+    create: true
+  server:
+    fullnameOverride: prometheus-server
+    persistentVolume:
+      enabled: false
+  serverFiles:
+    alerting_rules.yml:
+      groups:
+        - name: GlooPlatformAlerts
+          rules:
+            - alert: GlooPlatformTranslationLatencyIsHigh
+              annotations:
+                runbook: https://docs.solo.io/gloo-mesh-enterprise/main/troubleshooting/gloo/
+                summary: The translation time has increased above 10 sec. It's currently {{ $value | humanize }}.
+              expr: histogram_quantile(0.99, sum(rate(gloo_mesh_translation_time_sec_bucket[5m])) by(le)) > 10
+              for: 15m
+              labels:
+                severity: warning
+            - alert: GlooPlatformReconscilerLatencyIsHigh
+              annotations:
+                runbook: https://docs.solo.io/gloo-mesh-enterprise/main/troubleshooting/gloo/
+                summary: The reconciliation time has increased above 80 sec. It's currently {{ $value | humanize }}.
+              expr: histogram_quantile(0.99, sum(rate(gloo_mesh_reconciler_time_sec_bucket[5m])) by(le)) > 80
+              for: 15m
+              labels:
+                severity: warning
+            - alert: GlooPlatformAgentsAreDisconnected
+              annotations:
+                runbook: https://docs.solo.io/gloo-mesh-enterprise/main/troubleshooting/gloo/
+                summary: 'The following cluster is disconnected: {{ $labels.cluster }}. Check the Gloo Platform Agent pod in the cluster!'
+              expr: count by(cluster) (sum by(cluster) (relay_push_clients_warmed == 0)) > 0
+              for: 5m
+              labels:
+                severity: warning
+            - alert: GlooPlatformTranslationWarnings
+              annotations:
+                runbook: https://docs.solo.io/gloo-mesh-enterprise/main/troubleshooting/gloo/
+                summary: Gloo Platform has detected {{$value | humanize}} translation warnings in the last 5m. Check your {{ $labels.gvk }} resources!
+              expr: increase(translation_warning[5m]) > 0
+              labels:
+                severity: warning
+            - alert: GlooPlatformTranslationErrors
+              annotations:
+                runbook: https://docs.solo.io/gloo-mesh-enterprise/main/troubleshooting/gloo/
+                summary: Gloo Platform has detected {{$value | humanize}} translation errors in the last 5m. Check your {{ $labels.gvk }} resources!
+              expr: increase(translation_error[5m]) > 0
+              labels:
+                severity: warning
+            - alert: GlooPlatformRedisErrors
+              annotations:
+                runbook: https://docs.solo.io/gloo-mesh-enterprise/main/troubleshooting/gloo/
+                summary: Gloo Platform has detected {{$value | humanize}} Redis sync errors in the last 5m.
+              expr: increase(gloo_mesh_redis_sync_err[5m]) > 0
+              labels:
+                severity: warning
+    prometheus.yml:
+      rule_files:
+        - /etc/config/recording_rules.yml
+        - /etc/config/alerting_rules.yml
+        - /etc/config/rules
+        - /etc/config/alerts
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets:
+                - localhost:9090
+        - honor_labels: true
+          job_name: otel-collector
+          kubernetes_sd_configs:
+            - namespaces:
+                names:
+                  - gloo-mesh
+              role: pod
+          metric_relabel_configs:
+            - action: labeldrop
+              regex: app_kubernetes_io_instance|app_kubernetes_io_name|instance|job|pod_template_hash
+          relabel_configs:
+            - action: keep
+              regex: standalone-collector
+              source_labels:
+                - __meta_kubernetes_pod_label_component
+            - action: keep
+              regex: true
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+            - action: drop
+              regex: true
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
+            - action: replace
+              regex: (https?)
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+              target_label: __scheme__
+            - action: replace
+              regex: (.+)
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_path
+              target_label: __metrics_path__
+            - action: replace
+              regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+              replacement: '[$2]:$1'
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_port
+                - __meta_kubernetes_pod_ip
+              target_label: __address__
+            - action: replace
+              regex: (\d+);((([0-9]+?)(\.|$)){4})
+              replacement: $2:$1
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_port
+                - __meta_kubernetes_pod_ip
+              target_label: __address__
+            - action: labelmap
+              regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+              replacement: __param_$1
+            - action: labelmap
+              regex: __meta_kubernetes_pod_label_(.+)
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_namespace
+              target_label: namespace
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_pod_name
+              target_label: pod
+            - action: drop
+              regex: Pending|Succeeded|Failed|Completed
+              source_labels:
+                - __meta_kubernetes_pod_phase
+          scrape_interval: 30s
+          scrape_timeout: 20s
+        - honor_labels: true
+          job_name: gloo-mesh-mgmt-server
+          kubernetes_sd_configs:
+            - namespaces:
+                names:
+                  - gloo-mesh
+              role: pod
+          metric_relabel_configs:
+            - action: drop
+              regex: rest_client(.*)|controller(.*)|workqueue(.*)
+              source_labels:
+                - __name__
+          relabel_configs:
+            - action: keep
+              regex: gloo-mesh-mgmt-server|gloo-mesh-ui
+              source_labels:
+                - __meta_kubernetes_pod_label_app
+            - action: keep
+              regex: true
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+            - action: drop
+              regex: true
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
+            - action: replace
+              regex: (https?)
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+              target_label: __scheme__
+            - action: replace
+              regex: (.+)
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_path
+              target_label: __metrics_path__
+            - action: replace
+              regex: (\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})
+              replacement: '[$2]:$1'
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_port
+                - __meta_kubernetes_pod_ip
+              target_label: __address__
+            - action: replace
+              regex: (\d+);((([0-9]+?)(\.|$)){4})
+              replacement: $2:$1
+              source_labels:
+                - __meta_kubernetes_pod_annotation_prometheus_io_port
+                - __meta_kubernetes_pod_ip
+              target_label: __address__
+            - action: labelmap
+              regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+              replacement: __param_$1
+            - action: labelmap
+              regex: __meta_kubernetes_pod_label_(.+)
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_namespace
+              target_label: namespace
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_pod_name
+              target_label: pod
+            - action: drop
+              regex: Pending|Succeeded|Failed|Completed
+              source_labels:
+                - __meta_kubernetes_pod_phase
+  serviceAccounts:
+    alertmanager:
+      create: false
+    nodeExporter:
+      create: false
+    pushgateway:
+      create: false
+    server:
+      create: true
+
+# Configuration for the Gloo Platform Telemetry Collector. See the [OpenTelemetry Helm chart](https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-collector/values.yaml) for the complete set of values.
+telemetryCollector:
+  enabled: false
+  fullnameOverride: gloo-telemetry-collector
+  mode: daemonset
+  nameOverride: ""
+  replicaCount: 0
+  image:
+    pullPolicy: IfNotPresent
+    repository: gcr.io/gloo-mesh/gloo-otel-collector
+  command:
+    extraArgs:
+      - --config=/conf/relay.yaml
+    name: gloo-otel-collector
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi
+  configMap:
+    create: false
+  extraEnvs:
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: KUBE_POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+  extraVolumeMounts:
+    - mountPath: /etc/otel-certs
+      name: root-ca
+      readOnly: true
+    - mountPath: /conf
+      name: telemetry-configmap
+    - mountPath: /var/run/cilium
+      name: cilium-run
+  extraVolumes:
+    - name: root-ca
+      secret:
+        defaultMode: 420
+        secretName: relay-root-tls-secret
+    - configMap:
+        items:
+          - key: relay
+            path: relay.yaml
+        name: gloo-telemetry-collector-config
+      name: telemetry-configmap
+    - hostPath:
+        path: /var/run/cilium
+        type: DirectoryOrCreate
+      name: cilium-run
+  podAnnotations: null
+  ports:
+    jaeger-compact:
+      hostPort: 0
+    jaeger-grpc:
+      hostPort: 0
+    jaeger-thrift:
+      hostPort: 0
+    otlp:
+      hostPort: 0
+    otlp-http:
+      hostPort: 0
+    zipkin:
+      hostPort: 0
+  clusterRole:
+    create: true
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - nodes
+          - nodes/proxy
+          - nodes/metrics
+          - services
+          - endpoints
+          - pods
+          - ingresses
+          - configmaps
+        verbs:
+          - get
+          - list
+          - watch
+      - apiGroups:
+          - extensions
+          - networking.k8s.io
+        resources:
+          - ingresses/status
+          - ingresses
+        verbs:
+          - get
+          - list
+          - watch
+      - nonResourceURLs:
+          - /metrics
+        verbs:
+          - get
+  presets:
+    clusterMetrics:
+      enabled: false
+    hostMetrics:
+      enabled: false
+    kubeletMetrics:
+      enabled: false
+    kubernetesAttributes:
+      enabled: false
+    logsCollection:
+      enabled: false
+      includeCollectorLogs: false
+  service:
+    clusterIP: None
+    enabled: true
+    type: ClusterIP
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists
+    - key: CriticalAddonsOnly
+      operator: Exists
+    - effect: NoExecute
+      operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/disk-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/memory-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/pid-pressure
+      operator: Exists
+    - effect: NoSchedule
+      key: node.kubernetes.io/unschedulable
+      operator: Exists
+
+# Optional customization for the Gloo Platform Telemetry Collector.
+telemetryCollectorCustomization:
+  # Deprecated in favor of the pipelines field, which allows selectively enabling or customizing pipelines. Disables the default metrics/ui pipeline.
+  disableDefaultPipeline: false
+  # Enable scraping of network information from the compute instance that the collector agent runs on.
+  enableCloudMetadataProcessing: false
+  # SNI and certificate subject alternative name used in the collector certificate.
+  serverName: gloo-telemetry-gateway.gloo-mesh
+  # Configure the service telemetry (logs and metrics) as described in the [otel-collector docs](https://opentelemetry.io/docs/collector/configuration/#service).
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  # Configuration for extra exporters, such as to forward your data to a third-party provider. Exporters can forward the data to a destination on the local or remote network.
+  extraExporters:
+    # An exporter to forward data to Clickhouse.
+    clickhouse:
+      database: default
+      endpoint: tcp://clickhouse.gloo-mesh.svc:9000?dial_timeout=10s&compress=lz4
+      logs_table_name: gloo_api_logs
+      password: default
+      retry_on_failure:
+        enabled: true
+        initial_interval: 1s
+        max_elapsed_time: 5m
+        max_interval: 30s
+      timeout: 5s
+      ttl_days: 3
+      username: default
+  # Specify any added receivers, processors, or exporters in an extra pipeline.
+  extraPipelines: null
+  # Configuration for extra processors to drop and generate new data. Processors transform data before it is forwarded to downstream processors and/or exporters. For more information, see the [OTel documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
+  extraProcessors:
+    # The batch processor accepts spans, metrics, or logs and places them into batches. For more information, see [Batch Processor](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md).
+    batch:
+      send_batch_max_size: 3000
+      send_batch_size: 2000
+      timeout: 600ms
+    # The batch log processor accepts logs and places them into batches. For more information, see [Batch Processor](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md).
+    batch/logs:
+      # the maximum number of batcher instances that will be created through a distinct combination of MetadataKeys.
+      metadata_cardinality_limit: 0
+      # List of clients. Metadata keys that will be used to form distinct batchers. If this setting is empty a single batcher instance will be used. When a batcher instance is full, it will be sent and a new batcher instance will be created.
+      metadata_keys: []
+      # The maximum size of a batch. If the batch size is larger than this value, the batch is sent.
+      send_batch_max_size: 100
+      # The maximum number of traces or metrics to include in a batch.
+      send_batch_size: 100
+      # The maximum amount of time to wait for a batch to be filled before sending it anyway.
+      timeout: 5s
+    # The memory limiter processor is used to prevent out of memory situations on the collector. For more information, see [Memory Limiter Processor](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/memorylimiterprocessor/README.md).
+    memory_limiter:
+      check_interval: 1s
+      limit_percentage: 85
+      spike_limit_percentage: 10
+  # Configuration for extra receivers, such as to scrape extra Prometheus targets. Receivers listen on a network port to receive telemetry data.
+  extraReceivers:
+    # The file log receive tails and parses logs from files. For more information, see [File Log Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/filelogreceiver/README.md).
+    filelog/access_logs:
+      include:
+        - /var/log/pods/*/istio-proxy/*.log
+      include_file_name: false
+      include_file_path: true
+      operators:
+        - expr: body matches "^[^{}]*$"
+          type: filter
+        - id: get-format
+          routes:
+            - expr: body matches "^\\{"
+              output: parser-docker
+            - expr: body matches "^[^ Z]+ "
+              output: parser-crio
+            - expr: body matches "^[^ Z]+Z"
+              output: parser-containerd
+          type: router
+        - id: parser-crio
+          output: extract_metadata_from_filepath
+          regex: ^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          type: regex_parser
+        - id: parser-containerd
+          output: extract_metadata_from_filepath
+          regex: ^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$
+          type: regex_parser
+        - id: parser-docker
+          output: extract_metadata_from_filepath
+          type: json_parser
+        - cache:
+            size: 128
+          id: extract_metadata_from_filepath
+          output: log_parser
+          parse_from: attributes["log.file.path"]
+          regex: ^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$
+          type: regex_parser
+        - id: log_parser
+          parse_from: attributes.log
+          timestamp:
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+            parse_from: attributes.timestamp
+          type: json_parser
+        - expr: attributes["api_id"] matches "^$"
+          type: filter
+        - from: attributes.stream
+          to: attributes["log.iostream"]
+          type: move
+        - from: attributes.container_name
+          to: resource["k8s.container.name"]
+          type: move
+        - from: attributes.namespace
+          to: resource["k8s.namespace.name"]
+          type: move
+        - from: attributes.pod_name
+          to: resource["k8s.pod.name"]
+          type: move
+        - from: attributes.restart_count
+          to: resource["k8s.container.restart_count"]
+          type: move
+        - from: attributes.uid
+          to: resource["k8s.pod.uid"]
+          type: move
+        - field: body
+          type: remove
+        - field: attributes.log
+          type: remove
+  # Selectively enable, disable, or customize any of the default pipelines.
+  pipelines:
+    # Configure the collection of cilium flows.
+    logs/cilium_flows:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp
+        # List of processors to use in the pipeline.
+        processors:
+          - batch/logs
+          - resource/cluster_context
+        # List of receivers to use in the pipeline.
+        receivers:
+          - hubble
+    # A pre-defined pipeline that collects Istio access logs. This pipeline is disabled by default.
+    logs/istio_access_logs:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp
+        # List of processors to use in the pipeline.
+        processors:
+          - batch/logs
+        # List of receivers to use in the pipeline.
+        receivers:
+          - filelog/access_logs
+    # The metrics pipeline collects extra cilium metrics and is exportable for use in custom pipelines such as Grafana.
+    metrics/cilium:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp
+        # List of processors to use in the pipeline.
+        processors:
+          - memory_limiter
+          - filter/cilium
+          - batch
+        # List of receivers to use in the pipeline.
+        receivers:
+          - prometheus
+    # A pre-defined pipeline that allows otlp telemetry from other collectors to be relayed to the otel gateway. This pipeline is disabled by default
+    metrics/otlp_relay:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp
+        # List of receivers to use in the pipeline.
+        receivers:
+          - otlp
+    # The metrics/ui pipeline collects the metrics that are required for the Gloo UI graph. This pipeline is enabled by default.
+    metrics/ui:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: true
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp
+        # List of processors to use in the pipeline.
+        processors:
+          - memory_limiter
+          - filter/min
+          - batch
+          - attributes/drop_extra_istio_labels
+          - attributes/drop_extra_otel_labels
+          - gloo_metrics_processor
+        # List of receivers to use in the pipeline.
+        receivers:
+          - prometheus
+    # A pre-defined pipeline that collects traces to observe and monitor requests.
+    traces/istio:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp
+        # List of processors to use in the pipeline.
+        processors:
+          - batch
+        # List of receivers to use in the pipeline.
+        receivers:
+          - jaeger
+          - opencensus
+          - otlp
+          - zipkin
+
+# Telemetry Gateway configuration
+telemetryGateway:
+  enabled: true
+  replicaCount: 1
+  fullnameOverride: gloo-telemetry-gateway
+  mode: deployment
+  nameOverride: ""
+  image:
+    pullPolicy: IfNotPresent
+    repository: gcr.io/gloo-mesh/gloo-otel-collector
+  command:
+    name: gloo-otel-collector
+    extraArgs:
+      - --config=/conf/relay.yaml
+  resources:
+    requests:
+      cpu: 200m
+      memory: 300Mi
+  configMap:
+    create: false
+  extraEnvs: null
+  extraVolumeMounts:
+    - mountPath: /etc/otel-certs
+      name: tls-keys
+      readOnly: true
+    - mountPath: /conf
+      name: telemetry-configmap
+  extraVolumes:
+    - name: tls-keys
+      secret:
+        defaultMode: 420
+        secretName: gloo-telemetry-gateway-tls-secret
+    - configMap:
+        items:
+          - key: relay
+            path: relay.yaml
+        name: gloo-telemetry-gateway-config
+      name: telemetry-configmap
+  podAnnotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "9091"
+    prometheus.io/scrape: "true"
+  ports:
+    jaeger-compact:
+      enabled: false
+    jaeger-grpc:
+      enabled: false
+    jaeger-thrift:
+      enabled: false
+    otlp:
+      containerPort: 4317
+      enabled: true
+      hostPort: 0
+      protocol: TCP
+      servicePort: 4317
+    otlp-http:
+      enabled: false
+    zipkin:
+      enabled: false
+  clusterRole:
+    create: true
+    rules:
+      - apiGroups:
+          - ""
+        resources:
+          - nodes
+          - nodes/proxy
+          - nodes/metrics
+          - services
+          - endpoints
+          - pods
+          - ingresses
+          - configmaps
+        verbs:
+          - get
+          - list
+          - watch
+      - apiGroups:
+          - extensions
+          - networking.k8s.io
+        resources:
+          - ingresses/status
+          - ingresses
+        verbs:
+          - get
+          - list
+          - watch
+      - nonResourceURLs:
+          - /metrics
+        verbs:
+          - get
+  presets:
+    clusterMetrics:
+      enabled: false
+    hostMetrics:
+      enabled: false
+    kubeletMetrics:
+      enabled: false
+    kubernetesAttributes:
+      enabled: false
+    logsCollection:
+      enabled: false
+      includeCollectorLogs: false
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-scheme: ${NLB_LB_SCHEME_TYPE}
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-ip-address-type: ${NLB_LB_ADDRESS_TYPE}
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+  tolerations: null
+
+# Optional customization for the Gloo Platform Telemetry Gateway.
+telemetryGatewayCustomization:
+  # Deprecated in favor of the pipelines field, which allows selectively enabling or customizing pipelines. Disables the default metrics/prometheus pipeline.
+  disableDefaultPipeline: false
+  # SNI and certificate subject alternative name used in the telemetry gateway certificate.
+  serverName: gloo-telemetry-gateway.gloo-mesh
+  # Disable cert generation for the Gloo Platform Telemetry Gateway.
+  disableCertGeneration: false
+  # Interval of time between reloading the TLS certificate of the telemetry gateway.
+  reloadTlsCertificate: {}
+  # Configure the service telemetry (logs and metrics) as described in the [otel-collector docs](https://opentelemetry.io/docs/collector/configuration/#service).
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  # Configuration for extra exporters, such as to forward your data to a third-party provider. Exporters can forward the data to a destination on the local or remote network.
+  extraExporters:
+    # An exporter to forward data to Clickhouse.
+    clickhouse:
+      database: default
+      endpoint: tcp://clickhouse.gloo-mesh.svc:9000?dial_timeout=10s&compress=lz4
+      logs_table_name: gloo_api_logs
+      password: default
+      retry_on_failure:
+        enabled: true
+        initial_interval: 1s
+        max_elapsed_time: 5m
+        max_interval: 30s
+      timeout: 5s
+      ttl_days: 3
+      username: default
+  # Specify any added receivers, processors, or exporters in an extra pipeline.
+  extraPipelines: null
+  # Configuration for extra processors to drop and generate new data. Processors transform data before it is forwarded to downstream processors and/or exporters.  For more information, see the [OTel documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
+  extraProcessors:
+    # The batch processor accepts spans, metrics, or logs and places them into batches. For more information, see [Batch Processor](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md).
+    batch:
+      send_batch_max_size: 3000
+      send_batch_size: 2000
+      timeout: 600ms
+    # The batch log processor accepts logs and places them into batches. For more information, see [Batch Processor](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/batchprocessor/README.md).
+    batch/logs:
+      # the maximum number of batcher instances that will be created through a distinct combination of MetadataKeys.
+      metadata_cardinality_limit: 0
+      # List of clients. Metadata keys that will be used to form distinct batchers. If this setting is empty a single batcher instance will be used. When a batcher instance is full, it will be sent and a new batcher instance will be created.
+      metadata_keys: []
+      # The maximum size of a batch. If the batch size is larger than this value, the batch is sent.
+      send_batch_max_size: 100
+      # The maximum number of traces or metrics to include in a batch.
+      send_batch_size: 100
+      # The maximum amount of time to wait for a batch to be filled before sending it anyway.
+      timeout: 5s
+    # The memory limiter processor is used to prevent out of memory situations on the collector. For more information, see [Memory Limiter Processor](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/memorylimiterprocessor/README.md).
+    memory_limiter:
+      check_interval: 1s
+      limit_percentage: 85
+      spike_limit_percentage: 10
+  # Configuration for extra receivers, such as to scrape extra Prometheus targets. Receivers listen on a network port to receive telemetry data.
+  extraReceivers: null
+  # Selectively enable, disable, or customize any of the default pipelines.
+  pipelines:
+    # A pre-defined pipeline that forwards Istio access logs that the collector agents receive to Clickhouse.
+    logs/clickhouse:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - clickhouse
+        # List of processors to use in the pipeline.
+        processors:
+          - batch/logs
+        # List of receivers to use in the pipeline.
+        receivers:
+          - otlp
+    # Configure the exporting of telemetry into redis streams.
+    logs/redis_stream:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - redisstream
+        # List of processors to use in the pipeline.
+        processors:
+          - batch/logs
+        # List of receivers to use in the pipeline.
+        receivers:
+          - otlp
+    # A pre-defined pipeline that collects metrics from various sources, such as the Gloo management server, Gloo Platform, Istio, Cilium, and the Gloo OTel pipeline, and makes this data available to the built-in Prometheus server.
+    metrics/prometheus:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: true
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - prometheus
+        # List of processors to use in the pipeline.
+        processors:
+          - memory_limiter
+          - batch
+        # List of receivers to use in the pipeline.
+        receivers:
+          - otlp
+          - prometheus
+    # A pre-defined pipeline that collects traces to observe and monitor traffic requests, and makes them available to the built-in Jaeger tracing platform demo.
+    traces/jaeger:
+      # Determines whether the Gloo OTel pipeline is enabled or disabled.
+      enabled: false
+      # The configuration of the Gloo OTel pipeline.
+      pipeline:
+        # List of exporters to use in the pipeline.
+        exporters:
+          - otlp/jaeger
+        # List of processors to use in the pipeline.
+        processors:
+          - batch
+        # List of receivers to use in the pipeline.
+        receivers:
+          - otlp
+
+# Configuration for the Clickhouse deployment, which stores logs from OTel collectors. See the [Bitnami Clickhouse Helm chart](https://github.com/bitnami/charts/tree/main/bitnami/clickhouse/) for the complete set of values.
+clickhouse:
+  # Set to false to disable the clickhouse dependency.
+  enabled: false
+  # Override the full name, used for the service and the statefulset
+  fullnameOverride: clickhouse
+  # Number of replicas
+  replicaCount: 1
+  # Number of shards to create
+  shards: 1
+  # Authentication configuration
+  auth:
+    # Name of existing secret to use for authentication
+    existingSecret: clickhouse-auth
+    # Key in existing secret to use for authentication
+    existingSecretKey: password
+  # Keeper configuration
+  keeper:
+    # Set to false to disable the zookeeper dependency.
+    enabled: false
+  # Zookeeper configuration
+  zookeeper:
+    # Set to false to disable the zookeeper dependency.
+    enabled: false
+
+# Configuration for the Gloo Platform Jaeger instance. See the [Jaeger Helm chart](https://github.com/jaegertracing/helm-charts/blob/main/charts/jaeger/values.yaml) for the complete set of values.
+jaeger:
+  # Enable installation of Jaeger sub-chart. For demo purposes only.
+  enabled: false
+  agent:
+    enabled: false
+  allInOne:
+    args:
+      - --query.base-path=/tracing-ui
+    enabled: true
+    extraEnv:
+      - name: MEMORY_MAX_TRACES
+        value: "3000"
+  collector:
+    enabled: false
+  fullnameOverride: gloo-jaeger
+  provisionDataStore:
+    cassandra: false
+    elasticsearch: false
+    kafka: false
+  query:
+    enabled: false
+  storage:
+    type: memory
